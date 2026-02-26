@@ -272,8 +272,8 @@
   .badge-publish { background: #fce4ec; color: #d84355; }
   .badge-private { background: #fff3e0; color: #f57c00; }
   .badge-completed { background: #e8f5e9; color: #388e3c; }
-  .badge-writing { background: #e3f2fd; color: #1976d2; }
-  .badge-planning { background: #f3e5f5; color: #7b1fa2; }
+  .badge-writing { background: #f5f0e6; color: #8d6e3f; }
+  .badge-planning { background: #ede7df; color: #7a6352; }
   .badge-long { background: #e3f2fd; color: #1976d2; }
   .badge-short { background: #f3e5f5; color: #7b1fa2; }
   .badge-draft { background: #fce4ec; color: #c2185b; }
@@ -1359,6 +1359,8 @@ function renderWorks() {
   const wCountLabel = list.length < worksData.length ? `${list.length}件表示` : '';
   el.innerHTML = (wCountLabel ? `<div style="text-align:right;font-size:11px;color:var(--text3);padding:2px 4px;">${wCountLabel}</div>` : '') + list.map(w => {
     const charCount = characters.filter(c => c.work === w.name).length;
+    const genreTags = (w.genres||[]).map(g => '#'+g);
+    const siteTags = (w.platforms||[]).map(p => '#'+p);
     return `<div class="card" onclick="showWorkDetail(${w.id})">
       <div class="card-header">
         <div class="card-name">${esc(w.name)}</div>
@@ -1368,6 +1370,8 @@ function renderWorks() {
           ${w.status ? `<div style="width:100%"></div><span class="badge badge-${w.status==='完結'?'completed':w.status==='執筆中'?'writing':'planning'}">${esc(w.status)}</span>` : ''}
         </div>
       </div>
+      ${genreTags.length ? `<div class="card-tags" style="margin-bottom:4px">${genreTags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+      ${siteTags.length ? `<div class="card-tags" style="margin-bottom:4px">${siteTags.map(t => `<span class="tag-site">${esc(t)}</span>`).join('')}</div>` : ''}
       ${w.synopsis ? `<div style="font-size:12px;color:var(--text2);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(w.synopsis)}</div>` : ''}
       ${charCount > 0 ? `<div style="text-align:right"><span style="font-size:11px;color:var(--text3);white-space:nowrap"><span class="mi" style="font-size:12px">person</span>${charCount}人</span></div>` : ''}
     </div>`;
@@ -1641,6 +1645,7 @@ function renderCharacters() {
       </div>
       ${c.work ? `<div class="card-work"><span class="mi" style="font-size:13px;margin-right:2px">auto_stories</span>${esc(c.work)}</div>` : ''}
       ${(c.lastnameKana||c.firstnameKana) ? `<div class="card-reading">${esc((c.lastnameKana||''))} ${esc((c.firstnameKana||''))}</div>` : (c.reading ? `<div class="card-reading">${esc(c.reading)}</div>` : '')}
+      ${(work?.platforms||[]).length > 0 ? `<div class="card-tags">${work.platforms.map(p => `<span class="tag-site">#${esc(p)}</span>`).join('')}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1672,6 +1677,7 @@ function showDetail(id) {
     </div>
     ${(work?.platforms||[]).length > 0 ? `<div class="detail-row"><span class="detail-key">掲載サイト</span><div class="detail-val detail-tags">${work.platforms.map(p=>`<span class="tag">#${esc(p)}</span>`).join('')}</div></div>` : ''}
     ${c.work ? `<div class="detail-divider"></div><div class="detail-row"><span class="detail-key">作品名</span><span class="detail-val">${esc(c.work)}</span></div>` : ''}
+    ${(work?.genres||[]).length ? `<div class="detail-tags" style="margin-top:4px;margin-bottom:8px">${work.genres.map(g => `<span class="tag">#${esc(g)}</span>`).join('')}</div>` : ''}
     ${c.memo ? `<div class="detail-divider"></div><div style="font-size:14px; color:var(--text); line-height:1.7; white-space:pre-wrap">${esc(c.memo)}</div>` : ''}
     ${work ? `<div style="text-align:right;margin-top:12px"><span style="font-size:12px;color:var(--primary);cursor:pointer" onclick="goToWorkDetail('${c.work.replace(/'/g,"\\'")}')">作品タブで見る →</span></div>` : ''}
   `;
