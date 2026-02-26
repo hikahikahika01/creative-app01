@@ -1668,9 +1668,10 @@ function showDetail(id) {
   document.getElementById('detail-content').innerHTML = `
     <div class="detail-name">${esc(c.name)}</div>
     ${(c.lastnameKana||c.firstnameKana) ? `<div class="detail-reading">${esc(c.lastnameKana||'')} ${esc(c.firstnameKana||'')}</div>` : (c.reading ? `<div class="detail-reading">${esc(c.reading)}</div>` : '')}
-    <div class="card-badges" style="margin-bottom:12px">
+    <div class="card-badges" style="margin-bottom:12px;flex-wrap:wrap;gap:4px 4px;">
       ${work?.publish ? `<span class="badge badge-${work.publish==='公開'?'publish':'private'}">${esc(work.publish)}</span>` : ''}
       ${work?.length ? `<span class="badge badge-${work.length==='長編'?'long':'short'}">${esc(work.length)}</span>` : ''}
+      ${work?.status ? `<div style="width:100%"></div><span class="badge badge-${work.status==='完結'?'completed':work.status==='執筆中'?'writing':'planning'}">${esc(work.status)}</span>` : ''}
     </div>
     ${(work?.platforms||[]).length > 0 ? `<div class="detail-row"><span class="detail-key">掲載サイト</span><div class="detail-val detail-tags">${work.platforms.map(p=>`<span class="tag">#${esc(p)}</span>`).join('')}</div></div>` : ''}
     ${c.work ? `<div class="detail-divider"></div><div class="detail-row"><span class="detail-key">作品名</span><span class="detail-val">${esc(c.work)}</span></div>` : ''}
