@@ -1438,7 +1438,13 @@ function showWorkDetail(id) {
 
 function goToCharByWork(workName) {
   document.getElementById('char-search').value = workName;
+  toggleClear('char-search');
   showPage('page-character');
+}
+
+function goToWorkDetail(workName) {
+  const w = worksData.find(x => x.name === workName);
+  if (w) { showWorkDetail(w.id); }
 }
 
 function openAddWorkModal() {
@@ -1692,7 +1698,7 @@ function showDetail(id) {
       ${c.status ? `<span class="badge badge-${c.status==='公開'?'public':c.status==='非公開'?'private':'draft'}">${esc(c.status)}</span>` : ''}
       ${c.length ? `<span class="badge badge-${c.length==='長編'?'long':'short'}">${esc(c.length)}</span>` : ''}
     </div>
-    ${c.work ? `<div class="detail-row"><span class="detail-key">作品名</span><span class="detail-val">${esc(c.work)}</span></div>` : ''}
+    ${c.work ? `<div class="detail-row"><span class="detail-key">作品名</span><span class="detail-val">${esc(c.work)}${worksData.some(w => w.name === c.work) ? ` <span style="font-size:12px;color:var(--primary);cursor:pointer;margin-left:6px" onclick="goToWorkDetail('${c.work.replace(/'/g,"\\'")}')">作品タブで見る →</span>` : ''}</span></div>` : ''}
     ${(c.platforms||[]).length > 0 ? `<div class="detail-row"><span class="detail-key">投稿先</span><div class="detail-val detail-tags">${(c.platforms).map(p=>`<span class="tag">#${esc(p)}</span>`).join('')}</div></div>` : ''}
     ${c.memo ? `<div class="detail-divider"></div><div style="font-size:14px; color:var(--text); line-height:1.7; white-space:pre-wrap">${esc(c.memo)}</div>` : ''}
   `;
