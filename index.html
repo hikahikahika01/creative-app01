@@ -1144,14 +1144,20 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">ステータス</label>
-      <select class="form-select" id="fw-status">
+      <label class="form-label">公開状態</label>
+      <select class="form-select" id="fw-publish">
         <option value="">未設定</option>
-        <option value="執筆中">執筆中</option>
-        <option value="完結">完結</option>
         <option value="公開">公開</option>
         <option value="非公開">非公開</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">執筆状態</label>
+      <select class="form-select" id="fw-status">
+        <option value="">未設定</option>
         <option value="構想中">構想中</option>
+        <option value="執筆中">執筆中</option>
+        <option value="完結">完結</option>
       </select>
     </div>
     <div class="form-group">
@@ -1338,6 +1344,7 @@ function renderWorks() {
       w.name?.toLowerCase().includes(search) ||
       (w.genres||[]).some(g => g.toLowerCase().includes(search)) ||
       w.status?.toLowerCase().includes(search) ||
+      w.publish?.toLowerCase().includes(search) ||
       w.length?.toLowerCase().includes(search) ||
       (w.platforms||[]).some(p => p.toLowerCase().includes(search)) ||
       w.synopsis?.toLowerCase().includes(search) ||
@@ -1382,7 +1389,8 @@ function renderWorks() {
       <div class="card-header">
         <div class="card-name">${esc(w.name)}</div>
         <div class="card-badges">
-          ${w.status ? `<span class="badge badge-${w.status==='公開'||w.status==='完結'?'public':w.status==='非公開'?'private':w.status==='執筆中'?'long':'draft'}">${esc(w.status)}</span>` : ''}
+          ${w.publish ? `<span class="badge badge-${w.publish==='公開'?'public':'private'}">${esc(w.publish)}</span>` : ''}
+          ${w.status ? `<span class="badge badge-${w.status==='完結'?'public':w.status==='執筆中'?'long':'draft'}">${esc(w.status)}</span>` : ''}
           ${w.length ? `<span class="badge badge-${w.length==='長編'?'long':'short'}">${esc(w.length)}</span>` : ''}
         </div>
       </div>
@@ -1408,7 +1416,7 @@ function showWorkDetail(id) {
   document.getElementById('work-detail-content').innerHTML = `
     <div class="detail-name">${esc(w.name)}</div>
     ${(w.genres||[]).length ? `<div class="detail-tags" style="margin-bottom:12px">${w.genres.map(g => `<span class="tag">#${esc(g)}</span>`).join('')}</div>` : ''}
-    ${w.status || w.length ? `<div class="detail-row"><span class="detail-key">ステータス</span><span class="detail-val">${[w.status,w.length].filter(Boolean).join(' / ')}</span></div>` : ''}
+    ${w.publish || w.status || w.length ? `<div class="detail-row"><span class="detail-key">ステータス</span><span class="detail-val">${[w.publish,w.status,w.length].filter(Boolean).join(' / ')}</span></div>` : ''}
     ${(w.platforms||[]).length ? `<div class="detail-row"><span class="detail-key">掲載サイト</span><span class="detail-val">${w.platforms.join(', ')}</span></div>` : ''}
     ${w.synopsis ? `<div class="detail-divider"></div><div class="detail-row"><span class="detail-key">あらすじ</span></div><div style="font-size:14px;color:var(--text);line-height:1.8;white-space:pre-wrap;padding:0 4px;">${esc(w.synopsis)}</div>` : ''}
     ${w.worldview ? `<div class="detail-divider"></div><div class="detail-row"><span class="detail-key">世界観メモ</span></div><div style="font-size:14px;color:var(--text);line-height:1.8;white-space:pre-wrap;padding:0 4px;">${esc(w.worldview)}</div>` : ''}
@@ -1433,6 +1441,7 @@ function openAddWorkModal() {
   currentWorkPlatforms = [];
   document.getElementById('work-modal-title').textContent = '作品追加';
   document.getElementById('fw-name').value = '';
+  document.getElementById('fw-publish').value = '';
   document.getElementById('fw-status').value = '';
   document.getElementById('fw-length').value = '';
   document.getElementById('fw-synopsis').value = '';
@@ -1454,6 +1463,7 @@ function openEditWorkModal(id) {
   currentWorkPlatforms = [...(w.platforms || [])];
   document.getElementById('work-modal-title').textContent = '作品編集';
   document.getElementById('fw-name').value = w.name || '';
+  document.getElementById('fw-publish').value = w.publish || '';
   document.getElementById('fw-status').value = w.status || '';
   document.getElementById('fw-length').value = w.length || '';
   document.getElementById('fw-synopsis').value = w.synopsis || '';
@@ -1523,6 +1533,7 @@ function saveWork() {
     id: editingWorkId || Date.now(),
     name,
     genres: [...currentWorkGenres],
+    publish: document.getElementById('fw-publish').value,
     status: document.getElementById('fw-status').value,
     length: document.getElementById('fw-length').value,
     platforms: [...currentWorkPlatforms],
@@ -2567,7 +2578,9 @@ function showSuggestions(type) {
     const genres = [...new Set(worksData.flatMap(w => w.genres || []))];
     genres.forEach(g => { if (g.toLowerCase().includes(q)) candidates.push({ text: g, label: 'ジャンル' }); });
     const statuses = [...new Set(worksData.map(w => w.status).filter(Boolean))];
-    statuses.forEach(s => { if (s.toLowerCase().includes(q)) candidates.push({ text: s, label: 'ステータス' }); });
+    statuses.forEach(s => { if (s.toLowerCase().includes(q)) candidates.push({ text: s, label: '執筆状態' }); });
+    const publishes = [...new Set(worksData.map(w => w.publish).filter(Boolean))];
+    publishes.forEach(p => { if (p.toLowerCase().includes(q)) candidates.push({ text: p, label: '公開状態' }); });
     const lengths = [...new Set(worksData.map(w => w.length).filter(Boolean))];
     lengths.forEach(l => { if (l.toLowerCase().includes(q)) candidates.push({ text: l, label: '種別' }); });
     const sites = [...new Set(worksData.flatMap(w => w.platforms || []))];
@@ -2691,7 +2704,8 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
       id: Date.now() + added,
       name,
       genres: [],
-      status: status === '公開' ? '公開' : status === '非公開' ? '非公開' : '',
+      publish: status === '公開' ? '公開' : status === '非公開' ? '非公開' : '',
+      status: '',
       length,
       platforms,
       synopsis: '',
