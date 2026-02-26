@@ -255,7 +255,11 @@
     white-space: nowrap;
   }
   .badge-public { background: #e8f5e9; color: #388e3c; }
+  .badge-publish { background: #fce4ec; color: #d84355; }
   .badge-private { background: #fff3e0; color: #f57c00; }
+  .badge-completed { background: #e8f5e9; color: #388e3c; }
+  .badge-writing { background: #e3f2fd; color: #1976d2; }
+  .badge-planning { background: #f3e5f5; color: #7b1fa2; }
   .badge-long { background: #e3f2fd; color: #1976d2; }
   .badge-short { background: #f3e5f5; color: #7b1fa2; }
   .badge-draft { background: #fce4ec; color: #c2185b; }
@@ -779,7 +783,6 @@
       <button class="btn-add" onclick="openAddWorkModal()">＋ 追加</button>
     </div>
   </div>
-  <div class="tag-filter-wrap" id="works-tag-filter"></div>
   <div id="works-stat" class="stat-bar" style="display:none"></div>
   <div class="card-list" id="works-list"></div>
 </div>
@@ -817,7 +820,6 @@
       <button class="btn-add" onclick="openAddCharModal()">＋ 追加</button>
     </div>
   </div>
-  <div class="tag-filter-wrap" id="char-tag-filter"></div>
   <div id="char-stat" class="stat-bar" style="display:none"></div>
   <div class="card-list" id="char-list"></div>
 </div>
@@ -1128,7 +1130,12 @@
     <div class="modal-title" id="work-modal-title">作品追加</div>
     <div class="form-group">
       <label class="form-label">作品名 *</label>
-      <input type="text" class="form-input" id="fw-name" placeholder="作品名を入力">
+      <div class="searchable-select" id="fw-work-wrap">
+        <input type="text" class="form-input" id="fw-work-input" placeholder="作品名を検索または入力" autocomplete="off"
+          onfocus="showWorkList('fw')" oninput="filterWorkList('fw')">
+        <div class="select-list" id="fw-work-list"></div>
+      </div>
+      <input type="hidden" id="fw-name">
     </div>
     <div class="form-group">
       <label class="form-label">ジャンル（複数可）</label>
@@ -1170,13 +1177,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">掲載サイト</label>
-      <div class="platform-select" id="work-platform-select">
-        <button class="platform-btn" onclick="toggleWorkPlatform(this)">pixiv</button>
-        <button class="platform-btn" onclick="toggleWorkPlatform(this)">エブリスタ</button>
-        <button class="platform-btn" onclick="toggleWorkPlatform(this)">ノベマ！</button>
-        <button class="platform-btn" onclick="toggleWorkPlatform(this)">カクヨム</button>
-        <button class="platform-btn" onclick="toggleWorkPlatform(this)">小説家になろう</button>
-      </div>
+      <div class="platform-select" id="work-platform-select"></div>
       <div style="margin-top:6px; display:flex; gap:6px;">
         <input type="text" class="form-input" id="fw-platform-custom" placeholder="その他のサイト" style="flex:1; font-size:12px;">
         <button onclick="addWorkCustomPlatform()" style="padding:6px 10px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface2); cursor:pointer; font-size:12px;">追加</button>
@@ -1329,7 +1330,6 @@ let contestFilterStatus = '';
 let contestFilterSite = '';
 let contestFilterTag = '';
 let dictActiveTag = [];
-let worksFilterGenre = '';
 
 // ==================== 作品管理 ====================
 let editingWorkId = null;
@@ -1338,31 +1338,16 @@ let currentWorkPlatforms = [];
 let viewingWorkId = null;
 
 function renderWorks() {
-  const search = (document.getElementById('works-search')?.value || '').toLowerCase();
+  const searchRaw = (document.getElementById('works-search')?.value || '').toLowerCase();
+  const searchTerms = searchRaw.split(/\s+/).filter(Boolean);
   let list = worksData.filter(w => {
-    const matchSearch = !search ||
-      w.name?.toLowerCase().includes(search) ||
-      (w.genres||[]).some(g => g.toLowerCase().includes(search)) ||
-      w.status?.toLowerCase().includes(search) ||
-      w.publish?.toLowerCase().includes(search) ||
-      w.length?.toLowerCase().includes(search) ||
-      (w.platforms||[]).some(p => p.toLowerCase().includes(search)) ||
-      w.synopsis?.toLowerCase().includes(search) ||
-      w.worldview?.toLowerCase().includes(search) ||
-      w.memo?.toLowerCase().includes(search);
-    const matchGenre = !worksFilterGenre || (w.genres||[]).includes(worksFilterGenre);
-    return matchSearch && matchGenre;
+    if (searchTerms.length === 0) return true;
+    const haystack = [
+      w.name, ...(w.genres||[]), w.publish, w.status, w.length,
+      ...(w.platforms||[]), w.synopsis, w.worldview, w.memo
+    ].filter(Boolean).join(' ').toLowerCase();
+    return searchTerms.every(t => haystack.includes(t));
   });
-
-  // ジャンルフィルター
-  const allGenres = [...new Set(worksData.flatMap(w => w.genres || []))].sort();
-  const filterEl = document.getElementById('works-tag-filter');
-  if (allGenres.length > 0) {
-    filterEl.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:4px;">
-      <span class="tag-chip ${!worksFilterGenre?'active':''}" onclick="worksFilterGenre='';renderWorks()">すべて</span>
-      ${allGenres.map(g => `<span class="tag-chip ${worksFilterGenre===g?'active':''}" onclick="worksFilterGenre='${g.replace(/'/g,"\\'")}';renderWorks()">${esc(g)}</span>`).join('')}
-    </div>`;
-  } else { filterEl.innerHTML = ''; }
 
   // 件数
   const worksStatEl = document.getElementById('works-stat');
@@ -1385,21 +1370,18 @@ function renderWorks() {
   const wCountLabel = list.length < worksData.length ? `${list.length}件表示` : '';
   el.innerHTML = (wCountLabel ? `<div style="text-align:right;font-size:11px;color:var(--text3);padding:2px 4px;">${wCountLabel}</div>` : '') + list.map(w => {
     const charCount = characters.filter(c => c.work === w.name).length;
+    const tags = [...(w.genres||[]).map(g => '#'+g), ...(w.length ? ['#'+w.length] : []), ...(w.platforms||[]).map(p => '#'+p)];
     return `<div class="card" onclick="showWorkDetail(${w.id})">
       <div class="card-header">
         <div class="card-name">${esc(w.name)}</div>
         <div class="card-badges">
-          ${w.publish ? `<span class="badge badge-${w.publish==='公開'?'public':'private'}">${esc(w.publish)}</span>` : ''}
-          ${w.status ? `<span class="badge badge-${w.status==='完結'?'public':w.status==='執筆中'?'long':'draft'}">${esc(w.status)}</span>` : ''}
-          ${w.length ? `<span class="badge badge-${w.length==='長編'?'long':'short'}">${esc(w.length)}</span>` : ''}
+          ${w.publish ? `<span class="badge badge-${w.publish==='公開'?'publish':'private'}">${esc(w.publish)}</span>` : ''}
+          ${w.status ? `<span class="badge badge-${w.status==='完結'?'completed':w.status==='執筆中'?'writing':'planning'}">${esc(w.status)}</span>` : ''}
         </div>
       </div>
-      ${(w.genres||[]).length ? `<div class="card-tags" style="margin-bottom:6px">${w.genres.map(g => `<span class="tag">#${esc(g)}</span>`).join('')}</div>` : ''}
+      ${tags.length ? `<div class="card-tags" style="margin-bottom:6px">${tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
       ${w.synopsis ? `<div style="font-size:12px;color:var(--text2);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(w.synopsis)}</div>` : ''}
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div class="card-tags">${(w.platforms||[]).map(p => `<span class="tag">#${esc(p)}</span>`).join('')}</div>
-        ${charCount > 0 ? `<span style="font-size:11px;color:var(--text3);white-space:nowrap"><span class="mi" style="font-size:12px">person</span>${charCount}人</span>` : ''}
-      </div>
+      ${charCount > 0 ? `<div style="text-align:right"><span style="font-size:11px;color:var(--text3);white-space:nowrap"><span class="mi" style="font-size:12px">person</span>${charCount}人</span></div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1440,6 +1422,7 @@ function openAddWorkModal() {
   currentWorkGenres = [];
   currentWorkPlatforms = [];
   document.getElementById('work-modal-title').textContent = '作品追加';
+  document.getElementById('fw-work-input').value = '';
   document.getElementById('fw-name').value = '';
   document.getElementById('fw-publish').value = '';
   document.getElementById('fw-status').value = '';
@@ -1451,7 +1434,7 @@ function openAddWorkModal() {
   document.getElementById('fw-platform-custom').value = '';
   document.getElementById('work-delete-btn').style.display = 'none';
   document.querySelectorAll('#genre-select .platform-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelectorAll('#work-platform-select .platform-btn').forEach(b => b.classList.remove('selected'));
+  renderWorkPlatformSelect([]);
   document.getElementById('work-modal').classList.add('active');
 }
 
@@ -1462,6 +1445,7 @@ function openEditWorkModal(id) {
   currentWorkGenres = [...(w.genres || [])];
   currentWorkPlatforms = [...(w.platforms || [])];
   document.getElementById('work-modal-title').textContent = '作品編集';
+  document.getElementById('fw-work-input').value = w.name || '';
   document.getElementById('fw-name').value = w.name || '';
   document.getElementById('fw-publish').value = w.publish || '';
   document.getElementById('fw-status').value = w.status || '';
@@ -1477,9 +1461,7 @@ function openEditWorkModal(id) {
     b.classList.toggle('selected', currentWorkGenres.includes(b.textContent));
   });
   // 掲載サイトボタン
-  document.querySelectorAll('#work-platform-select .platform-btn').forEach(b => {
-    b.classList.toggle('selected', currentWorkPlatforms.includes(b.textContent));
-  });
+  renderWorkPlatformSelect(currentWorkPlatforms);
   document.getElementById('work-modal').classList.add('active');
 }
 
@@ -1512,11 +1494,26 @@ function toggleWorkPlatform(btn) {
   else { currentWorkPlatforms.push(val); }
 }
 
+function renderWorkPlatformSelect(selected) {
+  currentWorkPlatforms = [...selected];
+  const container = document.getElementById('work-platform-select');
+  const allPlatforms = [...new Set([...DEFAULT_PLATFORMS, ...JSON.parse(localStorage.getItem('sosaku_platforms')||'[]')])];
+  container.innerHTML = allPlatforms.map(p =>
+    `<button class="platform-btn ${currentWorkPlatforms.includes(p)?'selected':''}" onclick="toggleWorkPlatform(this)">${esc(p)}</button>`
+  ).join('');
+}
+
 function addWorkCustomPlatform() {
   const input = document.getElementById('fw-platform-custom');
   const val = input.value.trim();
   if (!val || currentWorkPlatforms.includes(val)) return;
   currentWorkPlatforms.push(val);
+  // localStorageにも保存して次回以降も表示
+  const saved = JSON.parse(localStorage.getItem('sosaku_platforms')||'[]');
+  if (!saved.includes(val)) {
+    saved.push(val);
+    localStorage.setItem('sosaku_platforms', JSON.stringify(saved));
+  }
   const container = document.getElementById('work-platform-select');
   const btn = document.createElement('button');
   btn.className = 'platform-btn selected';
@@ -1527,7 +1524,7 @@ function addWorkCustomPlatform() {
 }
 
 function saveWork() {
-  const name = document.getElementById('fw-name').value.trim();
+  const name = getWorkFromForm(null, 'fw-name');
   if (!name) { alert('作品名を入力してください'); return; }
   const obj = {
     id: editingWorkId || Date.now(),
@@ -1592,29 +1589,16 @@ function deleteWorkFromModal() {
 
 // ==================== キャラクター ====================
 function renderCharacters() {
-  const search = document.getElementById('char-search').value.toLowerCase();
+  const searchRaw = document.getElementById('char-search').value.toLowerCase();
+  const searchTerms = searchRaw.split(/\s+/).filter(Boolean);
   let list = characters.filter(c => {
-    const matchSearch = !search ||
-      c.name?.toLowerCase().includes(search) ||
-      c.lastname?.toLowerCase().includes(search) ||
-      c.firstname?.toLowerCase().includes(search) ||
-      c.lastnameKana?.toLowerCase().includes(search) ||
-      c.firstnameKana?.toLowerCase().includes(search) ||
-      c.reading?.toLowerCase().includes(search) ||
-      c.work?.toLowerCase().includes(search);
-    const matchPlatform = charFilterPlatforms.length === 0 || charFilterPlatforms.every(fp => (c.platforms||[]).includes(fp));
-    return matchSearch && matchPlatform;
+    if (searchTerms.length === 0) return true;
+    const haystack = [
+      c.name, c.lastname, c.firstname, c.lastnameKana, c.firstnameKana,
+      c.reading, c.work, c.status, c.length, ...(c.platforms||[]), c.memo
+    ].filter(Boolean).join(' ').toLowerCase();
+    return searchTerms.every(t => haystack.includes(t));
   });
-
-  // フィルター
-  const allPlatforms = [...new Set(characters.flatMap(c=>c.platforms||[]))].sort();
-  const filterEl = document.getElementById('char-tag-filter');
-  if (allPlatforms.length > 0) {
-    filterEl.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:4px;">
-      <span class="tag-chip ${charFilterPlatforms.length===0?'active':''}" onclick="charFilterPlatforms=[];renderCharacters()">すべて</span>
-      ${allPlatforms.map(p => `<span class="tag-chip ${charFilterPlatforms.includes(p)?'active':''}" onclick="toggleCharPF('${p.replace(/'/g,"\\'")}')">${esc(p)}</span>`).join('')}
-    </div>`;
-  } else { filterEl.innerHTML = ''; }
 
   // 件数
   const statEl = document.getElementById('char-stat');
@@ -1804,7 +1788,8 @@ function deleteCharFromModal() {
 function getWorkTitles() {
   const fromChars = characters.map(c => c.work).filter(Boolean);
   const fromContests = contests.map(c => c.work).filter(Boolean);
-  return [...new Set([...fromChars, ...fromContests])].sort();
+  const fromWorks = worksData.map(w => w.name).filter(Boolean);
+  return [...new Set([...fromChars, ...fromContests, ...fromWorks])].sort();
 }
 
 function addWorkTitle(title) {
@@ -1847,31 +1832,30 @@ function filterWorkList(prefix) {
 
 function pickWork(prefix, val) {
   document.getElementById(prefix + '-work-input').value = val;
-  document.getElementById(prefix.replace('-','')+'-work').value = val;
   // hidden input にもセット
-  const hiddenId = prefix === 'f' ? 'f-work' : 'fc-work';
-  document.getElementById(hiddenId).value = val;
+  const hiddenMap = { 'f': 'f-work', 'fc': 'fc-work', 'fw': 'fw-name' };
+  if (hiddenMap[prefix]) document.getElementById(hiddenMap[prefix]).value = val;
   document.getElementById(prefix + '-work-list').classList.remove('open');
 }
 
 function getWorkFromForm(selectId, inputId) {
-  // inputId の hidden から取る。空なら入力欄の値を使う
   const hidden = document.getElementById(inputId).value;
   if (hidden) return hidden;
-  const prefix = inputId === 'f-work' ? 'f' : 'fc';
+  const prefixMap = { 'f-work': 'f', 'fc-work': 'fc', 'fw-name': 'fw' };
+  const prefix = prefixMap[inputId] || 'f';
   return document.getElementById(prefix + '-work-input').value.trim();
 }
 
 // リスト外クリックで閉じる
 document.addEventListener('click', e => {
-  ['f','fc'].forEach(prefix => {
+  ['f','fc','fw'].forEach(prefix => {
     const wrap = document.getElementById(prefix + '-work-wrap');
     if (wrap && !wrap.contains(e.target)) {
       document.getElementById(prefix + '-work-list').classList.remove('open');
       const input = document.getElementById(prefix + '-work-input');
-      const hiddenId = prefix === 'f' ? 'f-work' : 'fc-work';
-      if (input.value.trim()) {
-        document.getElementById(hiddenId).value = input.value.trim();
+      const hiddenMap = { 'f': 'f-work', 'fc': 'fc-work', 'fw': 'fw-name' };
+      if (input.value.trim() && hiddenMap[prefix]) {
+        document.getElementById(hiddenMap[prefix]).value = input.value.trim();
       }
     }
   });
