@@ -86,6 +86,18 @@
     transition: background 0.2s;
   }
   .btn-icon:hover { background: var(--border); }
+  .last-updated-badge {
+    font-size: 10px;
+    color: var(--text3);
+    padding: 4px 8px;
+    background: var(--surface2);
+    border-radius: 8px;
+    white-space: nowrap;
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
 
   /* 検索・フィルター */
   .search-bar {
@@ -748,13 +760,51 @@
 </head>
 <body>
 
-<!-- ========== 人物ページ ========== -->
-<div id="page-character" class="page active">
+<!-- ========== 作品ページ ========== -->
+<div id="page-works" class="page active">
   <div class="header">
     <div class="header-top">
-      <h1>創作管理</h1>
+      <h1>作品</h1>
       <div class="header-actions">
-        <span id="last-updated-badge" style="font-size:10px; color:var(--text3); padding:4px 8px; background:var(--surface2); border-radius:8px; white-space:nowrap; line-height:1.3; display:flex; align-items:center; gap:3px;"><span class="mi" style="font-size:12px">schedule</span><span id="last-updated-text">---</span></span>
+        <span class="last-updated-badge"><span class="mi" style="font-size:12px">schedule</span><span class="last-updated-val">---</span></span>
+        <button class="btn-icon" onclick="openBackupPage()" title="バックアップ"><span class="mi">backup</span></button>
+      </div>
+    </div>
+    <div class="search-bar">
+      <div class="search-wrap">
+        <span class="search-icon mi" style="font-size:16px">search</span>
+        <input type="text" id="works-search" placeholder="作品検索..." oninput="renderWorks();showSuggestions('works')" onfocus="showSuggestions('works')" autocomplete="off">
+        <div class="suggest-list" id="works-suggestions"></div>
+      </div>
+      <button class="btn-add" onclick="openAddWorkModal()">＋ 追加</button>
+    </div>
+  </div>
+  <div class="tag-filter-wrap" id="works-tag-filter"></div>
+  <div id="works-stat" class="stat-bar" style="display:none"></div>
+  <div class="card-list" id="works-list"></div>
+</div>
+
+<!-- ========== 作品詳細ビュー ========== -->
+<div id="page-work-detail" class="page">
+  <div class="header">
+    <div class="header-top">
+      <div class="detail-back" onclick="showPage('page-works')">← 戻る</div>
+      <div class="header-actions">
+        <button class="btn-icon" onclick="editCurrentWork()"><span class="mi">edit</span></button>
+        <button class="btn-icon" style="color:#f44336" onclick="deleteCurrentWork()"><span class="mi">delete_outline</span></button>
+      </div>
+    </div>
+  </div>
+  <div id="work-detail-content" class="detail-section"></div>
+</div>
+
+<!-- ========== 人物ページ ========== -->
+<div id="page-character" class="page">
+  <div class="header">
+    <div class="header-top">
+      <h1>人物</h1>
+      <div class="header-actions">
+        <span class="last-updated-badge"><span class="mi" style="font-size:12px">schedule</span><span class="last-updated-val">---</span></span>
         <button class="btn-icon" onclick="openBackupPage()" title="バックアップ"><span class="mi">backup</span></button>
       </div>
     </div>
@@ -777,7 +827,10 @@
   <div class="header">
     <div class="header-top">
       <h1>コンテスト</h1>
-      <button class="btn-add" onclick="openAddContestModal()">＋ 追加</button>
+      <div class="header-actions">
+        <span class="last-updated-badge"><span class="mi" style="font-size:12px">schedule</span><span class="last-updated-val">---</span></span>
+        <button class="btn-icon" onclick="openBackupPage()" title="バックアップ"><span class="mi">backup</span></button>
+      </div>
     </div>
     <div class="search-bar">
       <div class="search-wrap">
@@ -785,6 +838,7 @@
         <input type="text" id="contest-search" placeholder="コンテスト検索..." oninput="renderContests();showSuggestions('contest')" onfocus="showSuggestions('contest')" autocomplete="off">
         <div class="suggest-list" id="contest-suggestions"></div>
       </div>
+      <button class="btn-add" onclick="openAddContestModal()">＋ 追加</button>
     </div>
   </div>
   <div class="tag-filter-wrap" id="contest-tag-filter"></div>
@@ -797,7 +851,10 @@
   <div class="header">
     <div class="header-top">
       <h1>辞書</h1>
-      <button class="btn-add" onclick="openAddDictModal()">＋ 追加</button>
+      <div class="header-actions">
+        <span class="last-updated-badge"><span class="mi" style="font-size:12px">schedule</span><span class="last-updated-val">---</span></span>
+        <button class="btn-icon" onclick="openBackupPage()" title="バックアップ"><span class="mi">backup</span></button>
+      </div>
     </div>
     <div class="search-bar">
       <div class="search-wrap">
@@ -805,6 +862,7 @@
         <input type="text" id="dict-search" placeholder="表現検索..." oninput="renderDict();showSuggestions('dict')" onfocus="showSuggestions('dict')" autocomplete="off">
         <div class="suggest-list" id="dict-suggestions"></div>
       </div>
+      <button class="btn-add" onclick="openAddDictModal()">＋ 追加</button>
     </div>
   </div>
   <div class="tag-filter-wrap" id="dict-tag-filter"></div>
@@ -877,7 +935,10 @@
 
 <!-- ========== ナビゲーション ========== -->
 <nav class="bottom-nav">
-  <button class="nav-item active" id="nav-character" onclick="showPage('page-character')">
+  <button class="nav-item active" id="nav-works" onclick="showPage('page-works')">
+    <span class="nav-icon mi">auto_stories</span>作品
+  </button>
+  <button class="nav-item" id="nav-character" onclick="showPage('page-character')">
     <span class="nav-icon mi">person_outline</span>人物
   </button>
   <button class="nav-item" id="nav-contest" onclick="showPage('page-contest')">
@@ -1061,6 +1122,80 @@
 </div>
 
 
+<!-- ========== 作品追加/編集モーダル ========== -->
+<div class="modal-overlay" id="work-modal">
+  <div class="modal">
+    <div class="modal-title" id="work-modal-title">作品追加</div>
+    <div class="form-group">
+      <label class="form-label">作品名 *</label>
+      <input type="text" class="form-input" id="fw-name" placeholder="例: これは恋でないので">
+    </div>
+    <div class="form-group">
+      <label class="form-label">ジャンル（複数可）</label>
+      <div class="platform-select" id="genre-select">
+        <button class="platform-btn" onclick="toggleGenre(this)">BL</button>
+        <button class="platform-btn" onclick="toggleGenre(this)">青春</button>
+        <button class="platform-btn" onclick="toggleGenre(this)">ファンタジー</button>
+        <button class="platform-btn" onclick="toggleGenre(this)">恋愛（男女）</button>
+      </div>
+      <div style="margin-top:6px; display:flex; gap:6px;">
+        <input type="text" class="form-input" id="fw-genre-custom" placeholder="その他のジャンル" style="flex:1; font-size:12px;">
+        <button onclick="addCustomGenre()" style="padding:6px 10px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface2); cursor:pointer; font-size:12px;">追加</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ステータス</label>
+      <select class="form-select" id="fw-status">
+        <option value="">未設定</option>
+        <option value="執筆中">執筆中</option>
+        <option value="完結">完結</option>
+        <option value="公開中">公開中</option>
+        <option value="非公開">非公開</option>
+        <option value="構想中">構想中</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">種別</label>
+      <select class="form-select" id="fw-length">
+        <option value="">未設定</option>
+        <option value="長編">長編</option>
+        <option value="短編">短編</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">掲載サイト</label>
+      <div class="platform-select" id="work-platform-select">
+        <button class="platform-btn" onclick="toggleWorkPlatform(this)">pixiv</button>
+        <button class="platform-btn" onclick="toggleWorkPlatform(this)">エブリスタ</button>
+        <button class="platform-btn" onclick="toggleWorkPlatform(this)">ノベマ！</button>
+        <button class="platform-btn" onclick="toggleWorkPlatform(this)">カクヨム</button>
+        <button class="platform-btn" onclick="toggleWorkPlatform(this)">小説家になろう</button>
+      </div>
+      <div style="margin-top:6px; display:flex; gap:6px;">
+        <input type="text" class="form-input" id="fw-platform-custom" placeholder="その他のサイト" style="flex:1; font-size:12px;">
+        <button onclick="addWorkCustomPlatform()" style="padding:6px 10px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface2); cursor:pointer; font-size:12px;">追加</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">あらすじ</label>
+      <textarea class="form-textarea" id="fw-synopsis" placeholder="あらすじを入力" style="min-height:100px"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">世界観メモ</label>
+      <textarea class="form-textarea" id="fw-worldview" placeholder="世界観・設定メモなど" style="min-height:100px"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">メモ</label>
+      <textarea class="form-textarea" id="fw-memo" placeholder="自由記入欄"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('work-modal')">キャンセル</button>
+      <button id="work-delete-btn" class="btn-delete" onclick="deleteWorkFromModal()" style="display:none">削除</button>
+      <button class="btn-save" onclick="saveWork()">保存</button>
+    </div>
+  </div>
+</div>
+
 <!-- ========== CSVインポートモーダル ========== -->
 <div class="modal-overlay" id="csv-modal">
   <div class="modal">
@@ -1095,7 +1230,7 @@
 
 <script>
 // ==================== データ管理 ====================
-const STORAGE_KEYS = { chars: 'sosaku_chars', contests: 'sosaku_contests', dict: 'sosaku_dict' };
+const STORAGE_KEYS = { chars: 'sosaku_chars', contests: 'sosaku_contests', dict: 'sosaku_dict', works_data: 'sosaku_works_data' };
 const useCS = !!(window.storage && window.storage.get);
 
 function loadData(key) {
@@ -1120,16 +1255,16 @@ function updateLastModified() {
 
 function displayLastModified() {
   const raw = localStorage.getItem('sosaku_last_modified');
-  const el = document.getElementById('last-updated-text');
+  const els = document.querySelectorAll('.last-updated-val');
   const el2 = document.getElementById('backup-last-updated');
   if (!raw) {
-    if (el) el.textContent = '---';
+    els.forEach(el => el.textContent = '---');
     if (el2) el2.textContent = '---';
     return;
   }
   const d = new Date(raw);
   const str = `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-  if (el) el.textContent = str;
+  els.forEach(el => el.textContent = str);
   if (el2) el2.textContent = str;
 }
 
@@ -1145,29 +1280,32 @@ async function initFromClaudeStorage() {
           if (key === 'chars') characters = data;
           if (key === 'contests') contests = data;
           if (key === 'dict') dictItems = data;
+          if (key === 'works_data') worksData = data;
         }
       }
     } catch(e) {}
   }
-  renderCharacters(); renderContests(); renderDict();
+  renderCharacters(); renderContests(); renderDict(); renderWorks();
 }
 
 let characters = loadData('chars');
 let contests = loadData('contests');
 let dictItems = loadData('dict');
+let worksData = loadData('works_data');
 
 // ==================== ページ管理 ====================
-let currentPage = 'page-character';
-let detailPrevPage = 'page-character';
+let currentPage = 'page-works';
+let detailPrevPage = 'page-works';
 
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const navMap = { 'page-character': 'nav-character', 'page-contest': 'nav-contest', 'page-dict': 'nav-dict' };
+  const navMap = { 'page-works': 'nav-works', 'page-character': 'nav-character', 'page-contest': 'nav-contest', 'page-dict': 'nav-dict' };
   if (navMap[pageId]) document.getElementById(navMap[pageId]).classList.add('active');
   currentPage = pageId;
   if (pageId === 'page-backup') updateBackupStats();
+  if (pageId === 'page-works') renderWorks();
   if (pageId === 'page-character') renderCharacters();
   if (pageId === 'page-contest') renderContests();
   if (pageId === 'page-dict') renderDict();
@@ -1185,6 +1323,261 @@ let contestFilterStatus = '';
 let contestFilterSite = '';
 let contestFilterTag = '';
 let dictActiveTag = [];
+let worksFilterGenre = '';
+
+// ==================== 作品管理 ====================
+let editingWorkId = null;
+let currentWorkGenres = [];
+let currentWorkPlatforms = [];
+let viewingWorkId = null;
+
+function renderWorks() {
+  const search = (document.getElementById('works-search')?.value || '').toLowerCase();
+  let list = worksData.filter(w => {
+    const matchSearch = !search ||
+      w.name?.toLowerCase().includes(search) ||
+      (w.genres||[]).some(g => g.toLowerCase().includes(search)) ||
+      w.status?.toLowerCase().includes(search) ||
+      w.length?.toLowerCase().includes(search) ||
+      (w.platforms||[]).some(p => p.toLowerCase().includes(search)) ||
+      w.synopsis?.toLowerCase().includes(search) ||
+      w.worldview?.toLowerCase().includes(search) ||
+      w.memo?.toLowerCase().includes(search);
+    const matchGenre = !worksFilterGenre || (w.genres||[]).includes(worksFilterGenre);
+    return matchSearch && matchGenre;
+  });
+
+  // ジャンルフィルター
+  const allGenres = [...new Set(worksData.flatMap(w => w.genres || []))].sort();
+  const filterEl = document.getElementById('works-tag-filter');
+  if (allGenres.length > 0) {
+    filterEl.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:4px;">
+      <span class="tag-chip ${!worksFilterGenre?'active':''}" onclick="worksFilterGenre='';renderWorks()">すべて</span>
+      ${allGenres.map(g => `<span class="tag-chip ${worksFilterGenre===g?'active':''}" onclick="worksFilterGenre='${g.replace(/'/g,"\\'")}';renderWorks()">${esc(g)}</span>`).join('')}
+    </div>`;
+  } else { filterEl.innerHTML = ''; }
+
+  // 件数
+  const worksStatEl = document.getElementById('works-stat');
+  if (worksData.length > 0) {
+    const totalChars = characters.filter(c => worksData.some(w => w.name === c.work)).length;
+    worksStatEl.style.display = 'flex';
+    worksStatEl.innerHTML = `
+      <div class="stat-item"><div class="stat-num">${worksData.length}</div><div class="stat-label">作品数</div></div>
+      <div class="stat-item"><div class="stat-num">${totalChars}</div><div class="stat-label">登場人物</div></div>
+    `;
+  } else { worksStatEl.style.display = 'none'; }
+
+  const el = document.getElementById('works-list');
+
+  if (list.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon mi" style="font-size:48px">auto_stories</div><p>作品が見つかりません</p></div>`;
+    return;
+  }
+
+  const wCountLabel = list.length < worksData.length ? `${list.length}件表示` : '';
+  el.innerHTML = (wCountLabel ? `<div style="text-align:right;font-size:11px;color:var(--text3);padding:2px 4px;">${wCountLabel}</div>` : '') + list.map(w => {
+    const charCount = characters.filter(c => c.work === w.name).length;
+    return `<div class="card" onclick="showWorkDetail(${w.id})">
+      <div class="card-header">
+        <div class="card-name">${esc(w.name)}</div>
+        <div class="card-badges">
+          ${w.status ? `<span class="badge badge-${w.status==='公開中'||w.status==='完結'?'public':w.status==='非公開'?'private':w.status==='執筆中'?'long':'draft'}">${esc(w.status)}</span>` : ''}
+          ${w.length ? `<span class="badge badge-${w.length==='長編'?'long':'short'}">${esc(w.length)}</span>` : ''}
+        </div>
+      </div>
+      ${(w.genres||[]).length ? `<div class="card-tags" style="margin-bottom:6px">${w.genres.map(g => `<span class="tag">#${esc(g)}</span>`).join('')}</div>` : ''}
+      ${w.synopsis ? `<div style="font-size:12px;color:var(--text2);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(w.synopsis)}</div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="card-tags">${(w.platforms||[]).map(p => `<span class="tag">#${esc(p)}</span>`).join('')}</div>
+        ${charCount > 0 ? `<span style="font-size:11px;color:var(--text3);white-space:nowrap"><span class="mi" style="font-size:12px">person</span>${charCount}人</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showWorkDetail(id) {
+  viewingWorkId = id;
+  const w = worksData.find(x => x.id === id);
+  if (!w) return;
+  const charList = characters.filter(c => c.work === w.name);
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-work-detail').classList.add('active');
+
+  document.getElementById('work-detail-content').innerHTML = `
+    <div class="detail-name">${esc(w.name)}</div>
+    ${(w.genres||[]).length ? `<div class="detail-tags" style="margin-bottom:12px">${w.genres.map(g => `<span class="tag">#${esc(g)}</span>`).join('')}</div>` : ''}
+    ${w.status || w.length ? `<div class="detail-row"><span class="detail-key">ステータス</span><span class="detail-val">${[w.status,w.length].filter(Boolean).join(' / ')}</span></div>` : ''}
+    ${(w.platforms||[]).length ? `<div class="detail-row"><span class="detail-key">掲載サイト</span><span class="detail-val">${w.platforms.join(', ')}</span></div>` : ''}
+    ${w.synopsis ? `<div class="detail-divider"></div><div class="detail-row"><span class="detail-key">あらすじ</span></div><div style="font-size:14px;color:var(--text);line-height:1.8;white-space:pre-wrap;padding:0 4px;">${esc(w.synopsis)}</div>` : ''}
+    ${w.worldview ? `<div class="detail-divider"></div><div class="detail-row"><span class="detail-key">世界観メモ</span></div><div style="font-size:14px;color:var(--text);line-height:1.8;white-space:pre-wrap;padding:0 4px;">${esc(w.worldview)}</div>` : ''}
+    ${w.memo ? `<div class="detail-divider"></div><div class="detail-row"><span class="detail-key">メモ</span><span class="detail-val">${esc(w.memo)}</span></div>` : ''}
+    <div class="detail-divider"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span class="detail-key" style="min-width:auto">登場人物（${charList.length}人）</span>
+      ${charList.length > 0 ? `<span style="font-size:12px;color:var(--primary);cursor:pointer" onclick="goToCharByWork('${w.name.replace(/'/g,"\\'")}')">人物タブで見る →</span>` : ''}
+    </div>
+    ${charList.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${charList.map(c => `<span style="font-size:13px;padding:4px 10px;background:var(--primary-pale);border-radius:8px;color:var(--text)">${esc(c.name)}</span>`).join('')}</div>` : `<div style="font-size:13px;color:var(--text3)">まだ登場人物が登録されていません</div>`}
+  `;
+}
+
+function goToCharByWork(workName) {
+  document.getElementById('char-search').value = workName;
+  showPage('page-character');
+}
+
+function openAddWorkModal() {
+  editingWorkId = null;
+  currentWorkGenres = [];
+  currentWorkPlatforms = [];
+  document.getElementById('work-modal-title').textContent = '作品追加';
+  document.getElementById('fw-name').value = '';
+  document.getElementById('fw-status').value = '';
+  document.getElementById('fw-length').value = '';
+  document.getElementById('fw-synopsis').value = '';
+  document.getElementById('fw-worldview').value = '';
+  document.getElementById('fw-memo').value = '';
+  document.getElementById('fw-genre-custom').value = '';
+  document.getElementById('fw-platform-custom').value = '';
+  document.getElementById('work-delete-btn').style.display = 'none';
+  document.querySelectorAll('#genre-select .platform-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#work-platform-select .platform-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('work-modal').classList.add('active');
+}
+
+function openEditWorkModal(id) {
+  const w = worksData.find(x => x.id === id);
+  if (!w) return;
+  editingWorkId = id;
+  currentWorkGenres = [...(w.genres || [])];
+  currentWorkPlatforms = [...(w.platforms || [])];
+  document.getElementById('work-modal-title').textContent = '作品編集';
+  document.getElementById('fw-name').value = w.name || '';
+  document.getElementById('fw-status').value = w.status || '';
+  document.getElementById('fw-length').value = w.length || '';
+  document.getElementById('fw-synopsis').value = w.synopsis || '';
+  document.getElementById('fw-worldview').value = w.worldview || '';
+  document.getElementById('fw-memo').value = w.memo || '';
+  document.getElementById('fw-genre-custom').value = '';
+  document.getElementById('fw-platform-custom').value = '';
+  document.getElementById('work-delete-btn').style.display = '';
+  // ジャンルボタン
+  document.querySelectorAll('#genre-select .platform-btn').forEach(b => {
+    b.classList.toggle('selected', currentWorkGenres.includes(b.textContent));
+  });
+  // 掲載サイトボタン
+  document.querySelectorAll('#work-platform-select .platform-btn').forEach(b => {
+    b.classList.toggle('selected', currentWorkPlatforms.includes(b.textContent));
+  });
+  document.getElementById('work-modal').classList.add('active');
+}
+
+function toggleGenre(btn) {
+  btn.classList.toggle('selected');
+  const val = btn.textContent;
+  if (currentWorkGenres.includes(val)) { currentWorkGenres = currentWorkGenres.filter(x => x !== val); }
+  else { currentWorkGenres.push(val); }
+}
+
+function addCustomGenre() {
+  const input = document.getElementById('fw-genre-custom');
+  const val = input.value.trim();
+  if (!val || currentWorkGenres.includes(val)) return;
+  currentWorkGenres.push(val);
+  // ボタンを追加
+  const container = document.getElementById('genre-select');
+  const btn = document.createElement('button');
+  btn.className = 'platform-btn selected';
+  btn.textContent = val;
+  btn.onclick = function() { toggleGenre(this); };
+  container.appendChild(btn);
+  input.value = '';
+}
+
+function toggleWorkPlatform(btn) {
+  btn.classList.toggle('selected');
+  const val = btn.textContent;
+  if (currentWorkPlatforms.includes(val)) { currentWorkPlatforms = currentWorkPlatforms.filter(x => x !== val); }
+  else { currentWorkPlatforms.push(val); }
+}
+
+function addWorkCustomPlatform() {
+  const input = document.getElementById('fw-platform-custom');
+  const val = input.value.trim();
+  if (!val || currentWorkPlatforms.includes(val)) return;
+  currentWorkPlatforms.push(val);
+  const container = document.getElementById('work-platform-select');
+  const btn = document.createElement('button');
+  btn.className = 'platform-btn selected';
+  btn.textContent = val;
+  btn.onclick = function() { toggleWorkPlatform(this); };
+  container.appendChild(btn);
+  input.value = '';
+}
+
+function saveWork() {
+  const name = document.getElementById('fw-name').value.trim();
+  if (!name) { alert('作品名を入力してください'); return; }
+  const obj = {
+    id: editingWorkId || Date.now(),
+    name,
+    genres: [...currentWorkGenres],
+    status: document.getElementById('fw-status').value,
+    length: document.getElementById('fw-length').value,
+    platforms: [...currentWorkPlatforms],
+    synopsis: document.getElementById('fw-synopsis').value.trim(),
+    worldview: document.getElementById('fw-worldview').value.trim(),
+    memo: document.getElementById('fw-memo').value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+
+  if (editingWorkId) {
+    const idx = worksData.findIndex(x => x.id === editingWorkId);
+    // 作品名変更時、関連キャラクターも更新
+    const oldName = worksData[idx]?.name;
+    if (oldName && oldName !== name) {
+      characters.forEach(c => { if (c.work === oldName) c.work = name; });
+      saveData('chars', characters);
+    }
+    if (idx >= 0) worksData[idx] = obj;
+  } else {
+    worksData.push(obj);
+  }
+
+  // 作品名リストにも追加
+  const savedWorks = JSON.parse(localStorage.getItem('sosaku_works')||'[]');
+  if (!savedWorks.includes(name)) { savedWorks.push(name); localStorage.setItem('sosaku_works', JSON.stringify(savedWorks)); }
+
+  saveData('works_data', worksData);
+  closeModal('work-modal');
+  renderWorks();
+}
+
+function editCurrentWork() {
+  if (viewingWorkId) openEditWorkModal(viewingWorkId);
+}
+
+function deleteCurrentWork() {
+  if (!viewingWorkId) return;
+  const w = worksData.find(x => x.id === viewingWorkId);
+  showConfirm('削除の確認', `「${w?.name}」を削除しますか？\n\n登場人物データは削除されません。`, () => {
+    worksData = worksData.filter(x => x.id !== viewingWorkId);
+    saveData('works_data', worksData);
+    showPage('page-works');
+  });
+}
+
+function deleteWorkFromModal() {
+  if (!editingWorkId) return;
+  const w = worksData.find(x => x.id === editingWorkId);
+  showConfirm('削除の確認', `「${w?.name}」を削除しますか？\n\n登場人物データは削除されません。`, () => {
+    worksData = worksData.filter(x => x.id !== editingWorkId);
+    saveData('works_data', worksData);
+    closeModal('work-modal');
+    renderWorks();
+  });
+}
 
 // ==================== キャラクター ====================
 function renderCharacters() {
@@ -1933,6 +2326,7 @@ function deleteDictFromModal() {
 function updateBackupStats() {
   document.getElementById('backup-stats').innerHTML = `
     最終更新: <b id="backup-last-updated">---</b><br>
+    作品: <b>${worksData.length}</b> 件<br>
     キャラクター: <b>${characters.length}</b> 件<br>
     コンテスト: <b>${contests.length}</b> 件<br>
     辞書: <b>${dictItems.length}</b> 件
@@ -1942,11 +2336,12 @@ function updateBackupStats() {
 
 function exportData(format='json') {
   const data = {
-    version: 2,
+    version: 3,
     exportDate: new Date().toISOString(),
     characters,
     contests,
     dict: dictItems,
+    worksData,
     works: JSON.parse(localStorage.getItem('sosaku_works')||'[]'),
     platforms: JSON.parse(localStorage.getItem('sosaku_platforms')||'[]')
   };
@@ -2048,10 +2443,11 @@ function importData(event) {
         if (data.characters) { characters = data.characters; saveData('chars', characters); }
         if (data.contests) { contests = data.contests; saveData('contests', contests); }
         if (data.dict) { dictItems = data.dict; saveData('dict', dictItems); }
+        if (data.worksData) { worksData = data.worksData; saveData('works_data', worksData); }
         if (data.works) localStorage.setItem('sosaku_works', JSON.stringify(data.works));
         if (data.platforms) localStorage.setItem('sosaku_platforms', JSON.stringify(data.platforms));
         alert('インポートが完了しました！');
-        renderCharacters(); renderContests(); renderDict();
+        renderCharacters(); renderContests(); renderDict(); renderWorks();
         updateBackupStats();
       }, 'インポートする', '#388e3c');
     } catch(err) {
@@ -2156,14 +2552,27 @@ function esc(str) {
 
 // ==================== 検索予測候補 ====================
 function showSuggestions(type) {
-  const inputMap = { char: 'char-search', contest: 'contest-search', dict: 'dict-search' };
-  const listMap = { char: 'char-suggestions', contest: 'contest-suggestions', dict: 'dict-suggestions' };
+  const inputMap = { works: 'works-search', char: 'char-search', contest: 'contest-search', dict: 'dict-search' };
+  const listMap = { works: 'works-suggestions', char: 'char-suggestions', contest: 'contest-suggestions', dict: 'dict-suggestions' };
   const q = document.getElementById(inputMap[type]).value.toLowerCase().trim();
   const listEl = document.getElementById(listMap[type]);
 
   if (!q || q.length < 1) { listEl.classList.remove('open'); return; }
 
   let candidates = [];
+
+  if (type === 'works') {
+    const names = [...new Set(worksData.map(w => w.name).filter(Boolean))];
+    names.forEach(n => { if (n.toLowerCase().includes(q)) candidates.push({ text: n, label: '作品' }); });
+    const genres = [...new Set(worksData.flatMap(w => w.genres || []))];
+    genres.forEach(g => { if (g.toLowerCase().includes(q)) candidates.push({ text: g, label: 'ジャンル' }); });
+    const statuses = [...new Set(worksData.map(w => w.status).filter(Boolean))];
+    statuses.forEach(s => { if (s.toLowerCase().includes(q)) candidates.push({ text: s, label: 'ステータス' }); });
+    const lengths = [...new Set(worksData.map(w => w.length).filter(Boolean))];
+    lengths.forEach(l => { if (l.toLowerCase().includes(q)) candidates.push({ text: l, label: '種別' }); });
+    const sites = [...new Set(worksData.flatMap(w => w.platforms || []))];
+    sites.forEach(s => { if (s.toLowerCase().includes(q)) candidates.push({ text: s, label: 'サイト' }); });
+  }
 
   if (type === 'char') {
     // 名前
@@ -2238,10 +2647,11 @@ function showSuggestions(type) {
 }
 
 function pickSuggestion(type, val) {
-  const inputMap = { char: 'char-search', contest: 'contest-search', dict: 'dict-search' };
-  const listMap = { char: 'char-suggestions', contest: 'contest-suggestions', dict: 'dict-suggestions' };
+  const inputMap = { works: 'works-search', char: 'char-search', contest: 'contest-search', dict: 'dict-search' };
+  const listMap = { works: 'works-suggestions', char: 'char-suggestions', contest: 'contest-suggestions', dict: 'dict-suggestions' };
   document.getElementById(inputMap[type]).value = val;
   document.getElementById(listMap[type]).classList.remove('open');
+  if (type === 'works') renderWorks();
   if (type === 'char') renderCharacters();
   if (type === 'contest') renderContests();
   if (type === 'dict') renderDict();
@@ -2249,7 +2659,7 @@ function pickSuggestion(type, val) {
 
 // 検索欄以外をタップしたら候補を閉じる
 document.addEventListener('click', (e) => {
-  ['char-suggestions', 'contest-suggestions', 'dict-suggestions'].forEach(id => {
+  ['works-suggestions', 'char-suggestions', 'contest-suggestions', 'dict-suggestions'].forEach(id => {
     const el = document.getElementById(id);
     if (el && !el.parentElement.contains(e.target)) el.classList.remove('open');
   });
@@ -2265,6 +2675,7 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 // データなし。空の状態でスタート。
 
 // 初期レンダリング
+renderWorks();
 renderCharacters();
 renderContests();
 renderDict();
