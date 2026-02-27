@@ -1421,6 +1421,20 @@ function showWorkDetail(id, pushHistory = true) {
     </div>
     ${charList.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${charList.map(c => `<span style="font-size:13px;padding:4px 10px;background:var(--primary-pale);border-radius:8px;color:var(--text)">${esc(c.name)}</span>`).join('')}</div>` : `<div style="font-size:13px;color:var(--text3)">まだ登場人物が登録されていません</div>`}
     ${charList.length > 0 ? `<div style="text-align:right;margin-top:12px"><span style="font-size:12px;color:var(--primary);cursor:pointer" onclick="goToCharByWork('${w.name.replace(/'/g,"\\'")}')">人物タブで見る →</span></div>` : ''}
+    ${(() => {
+      const contestList = contests.filter(c => c.work === w.name);
+      if (contestList.length === 0) return '';
+      const statusColors = { '応募予定':'#e3f2fd;color:#1976d2', '執筆中':'#fff3e0;color:#f57c00', '提出済み':'#e3f2fd;color:#5c6bc0', '一次':'#fff8e1;color:#f9a825', '二次':'#fff3e0;color:#ef6c00', '最終':'#f3e5f5;color:#7b1fa2', '受賞':'#e8f5e9;color:#388e3c', '落選':'#f5f5f5;color:#757575' };
+      return `<div class="detail-divider"></div>
+        <div style="margin-bottom:8px"><span class="detail-key" style="min-width:auto">コンテスト応募（${contestList.length}件）</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px">${contestList.map(c =>
+          `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface2);border-radius:8px;cursor:pointer" onclick="openEditContestModal(${c.id})">
+            <span style="font-size:13px;color:var(--text)">${esc(c.name.length > 25 ? c.name.slice(0,25)+'…' : c.name)}</span>
+            ${c.status ? `<span class="badge" style="background:${statusColors[c.status]||'#eee;color:#666'};font-size:11px;padding:2px 8px">${esc(c.status)}</span>` : ''}
+          </div>`
+        ).join('')}</div>
+        <div style="text-align:right;margin-top:12px"><span style="font-size:12px;color:var(--primary);cursor:pointer" onclick="showPage('page-contest')">コンテストタブで見る →</span></div>`;
+    })()}
   `;
 }
 
@@ -2027,7 +2041,7 @@ function renderContests() {
         <div class="card-name">${esc(c.name)}</div>
         ${c.status ? `<span class="badge" style="background:${statusColors[c.status]||'#eee;color:#666'}">${esc(c.status)}</span>` : ''}
       </div>
-      ${c.work ? `<div class="card-work"><span class="mi" style="font-size:13px;margin-right:2px">auto_stories</span>${esc(c.work)}</div>` : ''}
+      ${c.work ? `<div class="card-work"><span class="mi" style="font-size:13px;margin-right:2px">auto_stories</span>${esc(c.work)}${worksData.some(w => w.name === c.work) ? ` <span style="font-size:11px;color:var(--primary);margin-left:4px" onclick="goToWorkDetail('${c.work.replace(/'/g,"\\'")}');event.stopPropagation()">→</span>` : ''}</div>` : ''}
       ${c.resultPeriod ? `<div class="contest-detail"><span class="mi" style="font-size:13px;margin-right:2px">schedule</span>${esc(c.resultPeriod)}</div>` : ''}
       ${(c.platforms||[]).length > 0 ? `<div class="card-tags" style="margin-top:4px">${(c.platforms).map(p=>`<span class="tag">#${esc(p)}</span>`).join('')}</div>` : ''}
       ${c.url ? `<div style="margin-top:4px"><a href="${esc(c.url)}" target="_blank" rel="noreferrer" onclick="event.stopPropagation()" style="font-size:12px;color:var(--primary);word-break:break-all">${esc(c.url.length>45?c.url.slice(0,45)+'...':c.url)}</a></div>` : ''}
